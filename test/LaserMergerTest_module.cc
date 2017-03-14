@@ -13,14 +13,14 @@
 #include "art/Framework/Principal/Handle.h"
 #include "art/Framework/Principal/Run.h"
 #include "art/Framework/Principal/SubRun.h"
-#include "art/Utilities/InputTag.h"
+#include "canvas/Utilities/InputTag.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 #include "LaserObjects/LaserHits.h"
 #include "LaserObjects/LaserBeam.h"
 
 #include "LaserObjects/LaserUtils.h"
-
+#include "TMath.h"
 class LaserMergerTest;
 
 class LaserMergerTest : public art::EDAnalyzer {
@@ -69,14 +69,15 @@ void LaserMergerTest::analyze(art::Event const &event) {
 
     art::ValidHandle <lasercal::LaserBeam> LaserBeam = event.getValidHandle<lasercal::LaserBeam>(DigitTag);
 
+    double precision = 0.0001;
 
     if (fTestConfigFile.compare("HitDefs-10000.txt") == 0) {
         std::cout << "==> Testing Merging Laser 1 " << id << std::endl;
         assert(LaserBeam->GetLaserID() == 1);
-        assert(LaserBeam->GetTime().sec == id);
-        assert(LaserBeam->GetTime().usec == id);
-        assert(LaserBeam->GetLaserEventID() == id);
-        assert(LaserBeam->GetAssID() == id);
+        assert(LaserBeam->GetTime().sec == (int)id);
+        assert(LaserBeam->GetTime().usec == (int)id);
+        assert(LaserBeam->GetLaserEventID() == (int)id);
+        assert(LaserBeam->GetAssID() == (int)id);
         assert(LaserBeam->GetPower() == (float) id / 4.);
 
         TVector3 Position =  LaserBeam->GetLaserPosition();
@@ -84,9 +85,47 @@ void LaserMergerTest::analyze(art::Event const &event) {
         assert(Position == Pos);
 
         TVector3 Direction = LaserBeam->GetLaserDirection();
-        assert(Direction.Theta() - id - 2.0 < 0.0001);
-        assert(std::fmod(Direction.Phi(), 90.) < 0.0001);
 
+        auto reminder = Direction.X() - TMath::Sin(TMath::DegToRad() * (id - 2.));
+        assert(-precision < reminder && reminder < precision);
+
+        reminder = Direction.Z() - TMath::Cos(TMath::DegToRad() * (id - 2.));
+        assert(-precision < reminder && reminder < precision);
+
+    }
+
+    if (fTestConfigFile.compare("HitDefs-10001.txt") == 0) {
+        std::cout << "==> Testing Merging Laser 2 " << id << std::endl;
+        assert(LaserBeam->GetLaserID() == 2);
+        assert(LaserBeam->GetTime().sec == id);
+        assert(LaserBeam->GetTime().usec == id);
+        assert(LaserBeam->GetLaserEventID() == id);
+        assert(LaserBeam->GetAssID() == id);
+        assert(LaserBeam->GetPower() == (float) id / 4.);
+
+        TVector3 Position =  LaserBeam->GetLaserPosition();
+        TVector3 Pos(1., 1., 1.);
+        assert(Position == Pos);
+
+        TVector3 Direction = LaserBeam->GetLaserDirection();
+
+        auto reminder = TMath::RadToDeg() * Direction.Theta() - (double) abs(id - 2.) * 10.;
+        assert(-precision < reminder && reminder  < precision);
+
+        if (id < 3){
+            reminder = TMath::RadToDeg() * Direction.Phi() + 90;
+            assert(-precision < reminder && reminder  < precision);
+        }
+        else if (id >= 3){
+            reminder = TMath::RadToDeg() * Direction.Phi() - 90;
+            assert(-precision < reminder && reminder  < precision);
+        }
+    }
+    if (fTestConfigFile.compare("HitDefs-10002.txt") == 0) {
+        std::cout << "==> Testing Mapping " << id << std::endl;
+        // order should be [3, 2, 4, 0, 1]
+        assert(LaserBeam->GetTime().sec == id);
+        assert(LaserBeam->GetAssID() == LaserBeam->GetLaserEventID());
     }
 
 }

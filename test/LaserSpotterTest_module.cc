@@ -7,9 +7,9 @@
 #include "art/Framework/Core/EDFilter.h"
 #include "art/Framework/Principal/Event.h"
 
-#include "lardata/RawData/RawDigit.h"
-#include "lardata/RecoBase/Hit.h"
-#include "lardata/RecoBase/Wire.h"
+#include "lardataobj/RawData/RawDigit.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/Wire.h"
 
 #include "larevt/CalibrationDBI/Interface/DetPedestalService.h"
 #include "larevt/CalibrationDBI/Interface/DetPedestalProvider.h"
@@ -153,7 +153,7 @@ namespace LaserSpotter {
 
         auto laserid = LaserBeamHandle->GetLaserID();
         int Plane = 2;
-        if (0 < laserid < 2) {
+        if (0 < laserid && laserid < 2) {
             CenterTick = fCenterTicks.at(laserid - 1);
             TickWidth = fTickWidths.at(laserid - 1);
             WireRange.first = fWireBoxes.at(laserid-1).first;

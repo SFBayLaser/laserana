@@ -63,7 +63,7 @@ std::vector<recob::Wire> lasercal::GetWires(art::ValidHandle<std::vector<raw::Ra
     return WireVec;
 }
 
-std::vector<std::vector<std::vector<float>>> lasercal::ReadHitDefs(std::string Filename, bool DEBUG)
+std::unique_ptr<std::vector<std::vector<std::vector<float>>>> lasercal::ReadHitDefs(std::string Filename, bool DEBUG)
 /*
  * Reads hit definitions from csv file
  *
@@ -77,21 +77,12 @@ std::vector<std::vector<std::vector<float>>> lasercal::ReadHitDefs(std::string F
  */
 
 {
-    std::vector<std::vector<std::vector<float> > > RawDigitValues; ///< line by line csv container
+    std::unique_ptr<std::vector<std::vector<std::vector<float> > > > RawDigitValues( new std::vector<std::vector<std::vector<float> > >); ///< line by line csv container
     std::fstream stream(Filename, std::ios::in);
-
-    if (stream) {
-        typedef boost::tokenizer<boost::char_separator<char> > Tokenizer;
-        boost::char_separator<char> sep(", ");
-        std::string line;
-
-        std::vector<std::vector<float>> Hits;
-
         // Reading of RawDigit config file
         int EventIdx = -2;
 
         // read the hit data file into a vector
-        std::fstream stream(Filename, std::ios::in);
         if (stream) {
             typedef boost::tokenizer<boost::char_separator<char> > Tokenizer;
             boost::char_separator<char> sep(", ");
@@ -102,7 +93,7 @@ std::vector<std::vector<std::vector<float>>> lasercal::ReadHitDefs(std::string F
             while (getline(stream, line)) {
                 // skip comments
                 if (line[0] == '#') {
-                    if (EventIdx > -1) RawDigitValues.push_back(Hits);
+                    if (EventIdx > -1) RawDigitValues->push_back(Hits);
                     Hits.clear();
                     EventIdx++;
                     continue;
@@ -130,8 +121,9 @@ std::vector<std::vector<std::vector<float>>> lasercal::ReadHitDefs(std::string F
             stream.close();
         } else {
             stream.close();
-            throw art::Exception(art::errors::FileOpenError) << " File does not exist: " << Filename << std::endl;
-        }
-    }
-    return RawDigitValues;
+            //throw art::Exception(art::errors::FileOpenError) << " File does not exist: " << Filename << std::endl;
+            throw std::runtime_error("File seems not to exist");
+	}
+
+    return std::move(RawDigitValues);
 }

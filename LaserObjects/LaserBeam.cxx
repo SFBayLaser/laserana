@@ -69,10 +69,15 @@ void lasercal::LaserBeam::SetTime(const float& sec, const float& usec)
 
 // TODO: Fix class compilation if including GeometryCore.h and others!!!
 void lasercal::LaserBeam::SetIntersectionPoints()
-{   
+{
+    // Load detector properties
+    detinfo::DetectorProperties const *DetProperties = lar::providerFrom<detinfo::DetectorPropertiesService>();
+
     // Load geometry core
-    geo::GeometryCore const* Geometry = &*(art::ServiceHandle<geo::Geometry>());
-    
+
+    //geo::GeometryCore const* Geometry = &*(art::ServiceHandle<geo::Geometry>());
+    auto const* Geometry = lar::providerFrom<geo::Geometry>();
+
     // Create the active Volume
     geo::BoxBoundedGeo ActiveVolume( 0,2*Geometry->TPC().ActiveHalfWidth(), // xmin, xmax
 				     -Geometry->TPC().ActiveHalfHeight(),Geometry->TPC().ActiveHalfHeight(), // ymin, ymax  
@@ -93,6 +98,20 @@ void lasercal::LaserBeam::SetIntersectionPoints()
 	fEntryPoint = IntersectionPoints.front();
 	fExitPoint = IntersectionPoints.back();
     }
+
+    // Entry ticks should be the same on all wires
+    fEntryTick = (uint) DetProperties->ConvertXToTicks(fEntryPoint.X(), geo::PlaneID(0, 0, 0));
+    fExitTick = (uint) DetProperties->ConvertXToTicks(fExitPoint.X(), geo::PlaneID(0, 0, 0));
+
+    // Fill entry wires for all planes based on the calculated entry and exit points
+    for (unsigned int plane = 0; plane < Geometry->Nplanes(); plane++) {
+        auto plane_id = geo::PlaneID(0, 0, plane);
+        auto entry_wire = Geometry->NearestWire(fEntryPoint, plane_id);
+        auto exit_wire = Geometry->NearestWire(fExitPoint, plane_id);
+
+        fEntryWire.push_back(geo::WireID(plane_id, entry_wire));
+        fExitWire.push_back(geo::WireID(plane_id, exit_wire));
+    }
 }
 
 void lasercal::LaserBeam::Print() const 
@@ -101,12 +120,15 @@ void lasercal::LaserBeam::Print() const
                 << "Laser Event ID      " << fLaserEventID << "\n"
                 << "Associate Event ID  " << fAssosiateEventID << "\n"
                 << "Attenuator Position " << fPower * 100 << " %\n"
-                << "Aperture Position   " << fAperturePosition << "\n"
-                << "Mirror Position     ";// << std::endl; 
-    fLaserPosition.Print();
-    std::cout    << "Mirror Direction    ";// << std::endl;
-    fDirection.Print();
-    std::cout << "\n" << std::endl;
+                << "Aperture Position   " << fAperturePosition << "\n";
+    std::cout   << "Mirror Position     "; fLaserPosition.Print();
+    std::cout   << "Mirror Direction    "; fDirection.Print();
+    std::cout   << "EntryPoint          "; fEntryPoint.Print();
+    std::cout   << "ExitPoint           "; fExitPoint.Print();
+    std::cout   << "EntryTick           " << fEntryTick << std::endl;
+    std::cout   << "ExitTick            " << fExitTick  << std::endl;
+
+    std::cout  << std::endl;
 }
 
 TVector3 lasercal::LaserBeam::GetEntryPoint() const
@@ -127,4 +149,28 @@ TVector3 lasercal::LaserBeam::GetLaserDirection() const
 TVector3 lasercal::LaserBeam::GetLaserPosition() const
 {
     return fLaserPosition;
+}
+
+const std::vector<geo::WireID> &lasercal::LaserBeam::getEntryWire() const {
+    return fEntryWire;
+}
+
+const geo::WireID &lasercal::LaserBeam::getEntryWire(uint plane_id) const {
+    return fEntryWire.at(plane_id);
+}
+
+const std::vector<geo::WireID> &lasercal::LaserBeam::getExitWire() const {
+    return fExitWire;
+}
+
+const geo::WireID &lasercal::LaserBeam::getExitWire(uint plane_id) const {
+    return fExitWire.at(plane_id);
+}
+
+uint lasercal::LaserBeam::getEntryTick() const {
+    return fEntryTick;
+}
+
+uint lasercal::LaserBeam::getExitTick() const {
+    return fExitTick;
 }

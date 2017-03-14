@@ -24,7 +24,7 @@ IF (NOT CETBUILDTOOLS_VERSION)
     MESSAGE (FATAL_ERROR "ERROR: setup cetbuildtools to get the cmake modules")
 ENDIF()
 
-set(CMAKE_MODULE_PATH $ENV{ART_DIR}/Modules
+set(CMAKE_MODULE_PATH $ENV{CANVAS_DIR}/Modules
 		      $ENV{CETBUILDTOOLS_DIR}/Modules
 		      ${CMAKE_MODULE_PATH})
 
@@ -36,6 +36,7 @@ cet_set_compiler_flags(DIAGS CAUTIOUS
   NO_UNDEFINED
   ALLOW_DEPRECATIONS
   EXTRA_FLAGS -pedantic -Wno-unused-local-typedefs
+  -std=c++14
 )
 
 cet_report_compiler_flags()
@@ -63,11 +64,10 @@ add_subdirectory(HitAna)
 add_subdirectory(PowerAna)
 add_subdirectory(fcl)
 #add_subdirectory(ApplyField)
-add_subdirectory(SECAna)
+#add_subdirectory(SECAna)
 
 # tests
-add_subdirectory(test)
-
+#add_subdirectory(test)
 
 # ups - table and config files
 add_subdirectory(ups)

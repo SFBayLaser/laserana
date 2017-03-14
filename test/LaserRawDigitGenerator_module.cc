@@ -13,14 +13,14 @@
 #include "art/Framework/Principal/Handle.h"
 #include "art/Framework/Principal/Run.h"
 #include "art/Framework/Principal/SubRun.h"
-#include "art/Utilities/InputTag.h"
+#include "canvas/Utilities/InputTag.h"
 #include "fhiclcpp/ParameterSet.h"
 #include "messagefacility/MessageLogger/MessageLogger.h"
 
-#include "art/Utilities/Exception.h"
+#include "canvas/Utilities/Exception.h"
 
-#include "lardata/RawData/RawDigit.h"
-#include "lardata/RawData/raw.h"
+#include "lardataobj/RawData/RawDigit.h"
+#include "lardataobj/RawData/raw.h"
 
 #include "larcore/Geometry/Geometry.h"
 #include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
@@ -34,6 +34,13 @@
 #include <boost/random/uniform_int_distribution.hpp>
 
 #include "LaserObjects/LaserUtils.h"
+
+namespace {
+#ifndef uint
+    using uint = unsigned int;
+#endif
+    
+}
 
 class LaserRawDigitGenerator;
 
@@ -88,7 +95,7 @@ private:
     // inner most vector is configuration for hit
     // middle vector contains all hits for the specific event
     // outer vector contians hits over all events
-    std::vector<std::vector<std::vector<float> > > RawDigitValues; ///< line by line csv container
+    std::unique_ptr< std::vector<std::vector<std::vector<float> > > > RawDigitValues; ///< line by line csv container
 
 
     bool DEBUG = false;
@@ -115,13 +122,13 @@ void LaserRawDigitGenerator::produce(art::Event &event) {
     std::unique_ptr<std::vector<raw::RawDigit> > RawWires(new std::vector<raw::RawDigit>);
 
     // Handle config vs events
-    if (id > RawDigitValues.size() - 1) {
+    if (id > RawDigitValues->size() - 1) {
         event.put(std::move(RawWires), fRawDigitLabel);
         return;
     };
 
     boost::random::mt19937 gen;
-    auto RawDigitsInThisEvent = RawDigitValues.at(id);
+    auto RawDigitsInThisEvent = RawDigitValues->at(id);
     //std::vector<raw::RawDigit> RawWires;
 
     // create all hits in this event
@@ -185,14 +192,14 @@ void LaserRawDigitGenerator::produce(art::Event &event) {
         RawWires->emplace_back(std::move(RawDigit));
         WireADCSignal.clear();
     }
-    if (DEBUG) {
-        for (auto Wire : *RawWires) {
-            std::cout << "channel: " << Wire.Channel() << std::endl;
-            for (auto ADC : Wire.ADCs()) {
-                std::cout << ADC << " ";
-            }
-        }
-    }
+    //if (DEBUG) {
+    //    for (auto Wire : *RawWires) {
+    //        std::cout << "channel: " << Wire.Channel() << std::endl;
+    //        for (auto ADC : Wire.ADCs()) {
+    //            std::cout << ADC << " ";
+    //        }
+    //    }
+    //}
 
     event.put(std::move(RawWires), fRawDigitLabel);
 

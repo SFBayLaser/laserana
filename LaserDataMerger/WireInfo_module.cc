@@ -3,17 +3,16 @@
 
 
 // LArSoft includes
-#include "lardata/RawData/RawDigit.h"
-#include "lardata/RawData/raw.h"
-#include "lardata/RecoBaseArt/WireCreator.h"
-#include "lardata/RecoBaseArt/HitCreator.h"
+#include "lardataobj/RawData/RawDigit.h"
+#include "lardataobj/RawData/raw.h"
+#include "lardata/ArtDataHelper/WireCreator.h"
+#include "lardata/ArtDataHelper/HitCreator.h"
 #include "larcore/Geometry/Geometry.h"
 
 // Framework includes
 #include "art/Framework/Core/EDAnalyzer.h"
 #include "art/Framework/Services/Optional/TFileService.h"
 #include "art/Framework/Core/ModuleMacros.h"
-#include "art/Framework/Core/FindManyP.h"
 
 // C++ Includes
 #include <fstream>

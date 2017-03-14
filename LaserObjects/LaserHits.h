@@ -1,11 +1,11 @@
 #ifndef lasercal_LaserHits_H
 #define lasercal_LaserHits_H
 
-#include "larcore/SimpleTypesAndConstants/RawTypes.h"
-#include "larcore/SimpleTypesAndConstants/geo_types.h"
-#include "lardata/RecoBase/Hit.h"
-#include "lardata/RecoBase/Wire.h"
-#include "lardata/RecoBaseArt/HitCreator.h"
+#include "larcoreobj/SimpleTypesAndConstants/RawTypes.h"
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
+#include "lardataobj/RecoBase/Hit.h"
+#include "lardataobj/RecoBase/Wire.h"
+#include "lardata/ArtDataHelper/HitCreator.h"
 #include "larcore/Geometry/Geometry.h"
 #include "larcore/Geometry/GeometryCore.h"
 
@@ -27,6 +27,8 @@ namespace lasercal
   class LaserHits
   {
     public:
+      LaserHits() = default;
+
       // Constructor with geometry and thresholds for the hit finder. 
       // It just initializes the object. There is no hit finding or filling of data.
       LaserHits(const lasercal::LaserRecoParameters& ParameterSet);
@@ -34,6 +36,10 @@ namespace lasercal
       // Constructor wire data, geometry and thresholds for the hit finder.
       // It already runs the hit finder algorithms and fills the map data.
       LaserHits(const std::vector<recob::Wire>& Wires, const lasercal::LaserRecoParameters& ParameterSet, const lasercal::LaserBeam& LaserBeam);
+
+      // Alternative constructor accepting art data products as an input. Use this in case you want to process raw data independantly (e.g. calroi) from
+      // this algorithm
+      LaserHits(const art::Handle< std::vector<recob::Wire>>, const lasercal::LaserRecoParameters& ParameterSet, const lasercal::LaserBeam& LaserBeam);
 
       /// Alternative constructor where the user can supply a predefined ROI.
       LaserHits(const std::vector<recob::Wire>& Wires, const lasercal::LaserRecoParameters& ParameterSet, lasercal::LaserROI& LaserROI);
@@ -47,16 +53,21 @@ namespace lasercal
       
       // Get all hits of a certain plane
       std::unique_ptr< std::vector<recob::Hit> > GetPlaneHits(size_t PlaneIndex);
+
+      // Get all hits
+      std::unique_ptr< std::vector<recob::Hit> > GetHits();
       
       // Remove hits without time match
       void TimeMatchFilter();
       
     protected:
-      
+
+      static const size_t fNumberOfPlanes = 3;
+
       // Hit data member, it is an array for all planes cantainig vectors with all wire entries
       lasercal::LaserRecoParameters fParameters;
       
-      std::array< std::vector<std::map<float, recob::Hit>>, 3 > fHitMapsByPlane;
+      std::array< std::vector<std::map<float, recob::Hit>>, fNumberOfPlanes > fHitMapsByPlane;
       const geo::GeometryCore* fGeometry;
 //       std::array<float,3> fUVYThresholds;
       lasercal::LaserROI fLaserROI;

@@ -10,6 +10,7 @@
 #include <vector>
 #include <string>
 
+
 /// Root library
 #include <TH3.h>
 #include <TVector3.h>
@@ -19,17 +20,17 @@
 
 /// LArSoft
 #ifndef __GCCXML__
-#include "art/Framework/Services/Registry/ServiceHandle.h"
 #include "larcore/Geometry/Geometry.h"
 #include "larcore/Geometry/GeometryCore.h"
 #include "larcore/Geometry/BoxBoundedGeo.h"
+#include "lardata/DetectorInfoServices/DetectorPropertiesService.h"
+#include "larcoreobj/SimpleTypesAndConstants/geo_types.h"
+
+#ifndef uint
+using uint = unsigned int;
 #endif
 
-#include "larcore/SimpleTypesAndConstants/geo_types.h"
-
-// Framework includes
-
-
+#endif
 
 
 #ifndef LASERBEAM_H
@@ -50,32 +51,37 @@ namespace lasercal
   class LaserBeam
   {
     protected:
+
       ///< Laser start position (last mirror before the TPC)
       TVector3 fLaserPosition;        ///< Laser start position (last mirror before the TPC)
       TVector3 fDirection;           ///< Direction of the Laser beam
       TVector3 fEntryPoint;          ///< First Point in TPC
       TVector3 fExitPoint;           ///< Last Point in TPC
-      
+
+      uint fEntryTick;                          ///< Entry time tick
+      uint fExitTick;                           ///< Exit Time tick
+
       /// Errors
       TVector3 fLaserPositionError;
       TVector3 fDirectionError;
       TVector3 fEntryPointError;
       TVector3 fExitPointError;
-      
+
       Time fTime;                       ///< Trigger time recorded by laser server
       unsigned int fLaserID;            ///< Laser System identifier (1 = upstream, 2 = downstream)
       unsigned int fLaserEventID;       ///< Laser event id (not daq)
       unsigned int fAssosiateEventID;   ///< ID of the assosiate event id ()
       float fAperturePosition;          ///< Aperture position
       float fPower;                     ///< Attenuator setting (not measured pulse energy)
-      
-      #ifndef __GCCXML__
-      void SetIntersectionPoints();
-      #endif
-      
-      
+
+#ifndef __GCCXML__
+        void SetIntersectionPoints();
+        std::vector<geo::WireID> fEntryWire;      ///< Entry wire on each plane
+        std::vector<geo::WireID> fExitWire;       ///< Exit wire on each plane
+#endif
+
     public:
-      
+#ifndef __GCCXML__
      /**
      * @brief Default constructor: sets an empty volume
      * @see SetPosition
@@ -112,7 +118,7 @@ namespace lasercal
       LaserBeam(const TVector3& LaserPosition, const float& Phi, const float& Theta); 
       
      
-     #ifndef __GCCXML__
+
      /**
      * @brief Sets laser Position
      * @param LaserPosition start position of the laser 
@@ -172,16 +178,24 @@ namespace lasercal
        * @brief Print all protected value to stdout
        */
       void Print() const;
-      
+
       TVector3 GetLaserPosition() const;
       TVector3 GetLaserDirection() const;
       
       TVector3 GetEntryPoint() const;
       TVector3 GetExitPoint() const;
-      
-      #endif
+
+
+        const std::vector<geo::WireID> &getEntryWire() const;
+        const geo::WireID &getEntryWire(uint) const;
+
+        const std::vector<geo::WireID> &getExitWire() const;
+        const geo::WireID &getExitWire(uint) const;
+
+        uint getEntryTick() const;
+        uint getExitTick() const;
       //Anydatatype GetErrors();
-      
+#endif
   };
 }
 

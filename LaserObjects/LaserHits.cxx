@@ -35,6 +35,34 @@ lasercal::LaserHits::LaserHits(const std::vector<recob::Wire> &Wires, const lase
 
 } // Constructor using all wire signals and geometry purposes
 
+lasercal::LaserHits::LaserHits(const art::Handle< std::vector<recob::Wire>> WireHandle, const lasercal::LaserRecoParameters &ParameterSet,
+                               const lasercal::LaserBeam &LaserBeam) {
+
+    fGeometry = &*(art::ServiceHandle<geo::Geometry>());
+    fParameters = ParameterSet;
+
+    fLaserROI = lasercal::LaserROI(fParameters.HitBoxSize, LaserBeam);
+
+    // Reserve space for hit container
+    for (auto &MapVector : fHitMapsByPlane) {
+        MapVector.reserve(WireHandle->size());
+    }
+
+    // Loop over all wires
+    for (const auto &SingleWire : *WireHandle) {
+        // Get channel information
+        raw::ChannelID_t Channel = SingleWire.Channel();
+        unsigned Plane = fGeometry->ChannelToWire(Channel).front().Plane;
+
+        // Get Single wire hits
+        std::map<float, recob::Hit> HitMap = FindSingleWireHits(SingleWire, Plane);
+
+        // Fill map data by pushing back the wire vector
+        fHitMapsByPlane.at(Plane).push_back(HitMap);
+    }// end loop over wires
+
+} // Constructor using all wire signals and geometry purposes
+
 //-------------------------------------------------------------------------------------------------------------------
 
 lasercal::LaserHits::LaserHits(const std::vector<recob::Wire> &Wires, const lasercal::LaserRecoParameters &ParameterSet,
@@ -128,6 +156,25 @@ std::unique_ptr<std::vector<recob::Hit> > lasercal::LaserHits::GetPlaneHits(size
 
 //-------------------------------------------------------------------------------------------------------------------
 
+//-------------------------------------------------------------------------------------------------------------------
+
+std::unique_ptr<std::vector<recob::Hit> > lasercal::LaserHits::GetHits() {
+    std::unique_ptr<std::vector<recob::Hit> > HitVector(new std::vector<recob::Hit>);
+    for (size_t plane = 0; plane < fNumberOfPlanes; plane++ ) {
+        // Loop over all hit maps in a vector of a certain plane
+        for (const auto &HitMaps : fHitMapsByPlane.at(plane)) {
+            // Loop through map
+            for (const auto &HitMap : HitMaps) {
+                HitVector->push_back(HitMap.second);
+            }// loop through map
+        }// loop over hit map vector
+
+    }
+    return std::move(HitVector);
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+
 std::map<float, recob::Hit> lasercal::LaserHits::FindSingleWireHits(const recob::Wire &Wire, unsigned Plane) {
     // Initialize hit map
     std::map<float, recob::Hit> HitMap;
@@ -198,7 +245,6 @@ std::map<float, recob::Hit> lasercal::LaserHits::UPlaneHitFinder(const recob::Wi
 
     if (fParameters.UseROI) {
         if (!fLaserROI.IsWireInRange(SingleWire)) {
-
             return LaserHits;
         }
     }

@@ -5,10 +5,14 @@ laserreco:
       module_type:         "LaserReco"
 
       GenerateWireMap:         false
-      UseROI:            false
-      HitBoxSize:              10       #cm
+      UseROI:                  true
+      HitBoxSize:              25       #cm
 
       MinAllowedChannelStatus: 4
+
+      LaserRecoModuleLabel:       "daq"
+      LaserDataMergerModuleLabel: "LaserDataMerger"
+      LaserBeamInstanceLabel:     "LaserBeam"
 
       # High amplitude threshold for high signal exceptions for all planes
       HighAmplThreshold:       1000
